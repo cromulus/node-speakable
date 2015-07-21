@@ -1,22 +1,24 @@
 var Speakable = require('./');
+var requestify = require('requestify');
 
 
 // Setup google speech
 var speakable = new Speakable({
-  key: 'KEY'
+  key: 'KEY',
+  threshold: 0.4
 });
 
 speakable.on('speechStart', function() {
-  console.log('onSpeechStart');
+  console.log('speech start');
 });
 
 speakable.on('speechStop', function() {
-  console.log('onSpeechStop');
+  console.log('speech stop');
   speakable.recordVoice();
 });
 
 speakable.on('speechReady', function() {
-  console.log('onSpeechReady');
+  console.log('speechready');
 });
 
 speakable.on('error', function(err) {
@@ -26,35 +28,15 @@ speakable.on('error', function(err) {
 });
 
 speakable.on('speechResult', function(spokenWords) {
-  console.log('onSpeechResult:');
-  console.log(spokenWords);
-  var querystring = require('querystring');
-  var http = require('http');
 
-  var data = querystring.stringify({
-    words: spokenWords,
+
+  var my_words = JSON.stringify(spokenWords);
+  console.log(my_words);
+
+  requestify.post('http://127.0.0.1:4567/words', {
+    words: spokenWords
+  }).then(function(response) {
+    console.log(response.getBody());
   });
-
-  var options = {
-    host: 'my.url',
-    port: 80,
-    path: '/words',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Content-Length': Buffer.byteLength(data)
-    }
-  };
-
-  var req = http.request(options, function(res) {
-    res.setEncoding('utf8');
-    res.on('data', function(chunk) {
-      console.log("body: " + chunk);
-    });
-  });
-
-  req.write(data);
-  req.end();
 });
-
 speakable.recordVoice();
